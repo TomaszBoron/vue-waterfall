@@ -53,7 +53,10 @@ export default {
     },
     watch: {
       default: () => ({})
-    }
+    },
+    captionHeight: {
+      validator: (val) => val >= 0
+    },
   },
   data: () => ({
     style: {
@@ -80,7 +83,8 @@ export default {
       this.maxLineGap,
       this.singleMaxWidth,
       this.fixedHeight,
-      this.watch
+      this.watch,
+      this.captionHeight
     ), this.reflowHandler)
     this.$watch('grow', this.reflowHandler)
   },
@@ -153,7 +157,8 @@ function getOptions (vm) {
     maxLineGap: maxLineGap,
     singleMaxWidth: Math.max(vm.singleMaxWidth || 0, maxLineGap),
     fixedHeight: !!vm.fixedHeight,
-    grow: vm.grow && vm.grow.map(val => +val)
+    grow: vm.grow && vm.grow.map(val => +val),
+    captionHeight: vm.captionHeight || 0,
   }
 }
 
@@ -173,7 +178,7 @@ var verticalLineProcessor = (() => {
       rect.top = tops[offset]
       rect.left = strategy.left + (offset ? sum(strategy.width.slice(0, offset)) : 0)
       rect.width = width
-      rect.height = meta.height * (options.fixedHeight ? 1 : width / meta.width)
+      rect.height = meta.height * (options.fixedHeight ? 1 : width / meta.width)  + options.captionHeight
       tops[offset] = tops[offset] + rect.height
     })
     vm.style.height = Math.max.apply(Math, tops) + 'px'
