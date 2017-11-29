@@ -51,12 +51,21 @@ export default {
     grow: {
       validator: (val) => val instanceof Array
     },
+    gap: {
+      type: Number,
+      default: 0
+    },
+    padding: {
+      type: Number,
+      default: 0
+    },
+    borderWidth: {
+      type: Number,
+      default: 0
+    },
     watch: {
       default: () => ({})
-    },
-    captionHeight: {
-      validator: (val) => val >= 0
-    },
+    }
   },
   data: () => ({
     style: {
@@ -83,8 +92,7 @@ export default {
       this.maxLineGap,
       this.singleMaxWidth,
       this.fixedHeight,
-      this.watch,
-      this.captionHeight
+      this.watch
     ), this.reflowHandler)
     this.$watch('grow', this.reflowHandler)
   },
@@ -133,7 +141,7 @@ function reflow () {
     }
     this.style.overflow = 'hidden'
     render(this.virtualRects, metas)
-    this.$emit('reflowed', this)
+    this.$emit('reflowed', this) 
   }, 0)
 }
 
@@ -157,8 +165,7 @@ function getOptions (vm) {
     maxLineGap: maxLineGap,
     singleMaxWidth: Math.max(vm.singleMaxWidth || 0, maxLineGap),
     fixedHeight: !!vm.fixedHeight,
-    grow: vm.grow && vm.grow.map(val => +val),
-    captionHeight: vm.captionHeight || 0,
+    grow: vm.grow && vm.grow.map(val => +val)
   }
 }
 
@@ -171,15 +178,20 @@ var verticalLineProcessor = (() => {
       ? getRowStrategyWithGrow(width, grow)
       : getRowStrategy(width, options)
     let tops = getArrayFillWith(0, strategy.count)
+    const gap = vm.gap
+    const growLen = grow ? grow.length : strategy.count
+    const padding = vm.padding
+    const borderWidth = vm.borderWidth
     metas.forEach((meta, index) => {
+      let gapLeft = index % growLen === 0 ? 0 : gap / 2
       let offset = tops.reduce((last, top, i) => top < tops[last] ? i : last, 0)
       let width = strategy.width[offset % strategy.count]
       let rect = rects[index]
-      rect.top = tops[offset]
-      rect.left = strategy.left + (offset ? sum(strategy.width.slice(0, offset)) : 0)
-      rect.width = width
-      rect.height = meta.height * (options.fixedHeight ? 1 : width / meta.width)  + options.captionHeight
-      tops[offset] = tops[offset] + rect.height
+      rect.top = tops[offset] + gap / 2
+      rect.left = strategy.left + (offset ? sum(strategy.width.slice(0, offset)) : 0) + gap / 2
+      rect.width = width - gap - borderWidth * 2
+      rect.height = meta.height * (options.fixedHeight ? 1 : (rect.width - padding * 2 - borderWidth * 2) / meta.width) + padding * 2
+      tops[offset] = tops[offset] + rect.height + gap
     })
     vm.style.height = Math.max.apply(Math, tops) + 'px'
   }
@@ -242,19 +254,23 @@ var horizontalLineProcessor = (() => {
     let total = metas.length
     let top = 0
     let offset = 0
+    const gap = vm.gap
+    const padding = vm.padding
+    const borderWidth = vm.borderWidth
+
     while (offset < total) {
       let strategy = getRowStrategy(width, options, metas, offset)
       for (let i = 0, left = 0, meta, rect; i < strategy.count; i++) {
         meta = metas[offset + i]
         rect = rects[offset + i]
         rect.top = top
-        rect.left = strategy.left + left
-        rect.width = meta.width * strategy.height / meta.height
-        rect.height = strategy.height
-        left += rect.width
+        rect.left = strategy.left + left + gap / 2
+        rect.height = strategy.height - (gap + padding + borderWidth * 2)
+        rect.width = meta.width * rect.height / meta.height
+        left += rect.width + gap
       }
       offset += strategy.count
-      top += strategy.height
+      top += strategy.height - gap
     }
     vm.style.height = top + 'px'
   }
