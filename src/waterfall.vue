@@ -55,6 +55,10 @@ export default {
       type: Number,
       default: 0
     },
+    bottomGap: {
+      type: Number,
+      default: 0
+    },
     padding: {
       type: Number,
       default: 0
@@ -179,6 +183,7 @@ var verticalLineProcessor = (() => {
       : getRowStrategy(width, options)
     let tops = getArrayFillWith(0, strategy.count)
     const gap = vm.gap
+    const bottomGap = vm.bottomGap
     const growLen = grow ? grow.length : strategy.count
     const padding = vm.padding
     const borderWidth = vm.borderWidth
@@ -191,7 +196,7 @@ var verticalLineProcessor = (() => {
       rect.left = strategy.left + (offset ? sum(strategy.width.slice(0, offset)) : 0) + gap / 2
       rect.width = width - gap - borderWidth * 2
       rect.height = meta.height * (options.fixedHeight ? 1 : (rect.width - padding * 2 - borderWidth * 2) / meta.width) + padding * 2
-      tops[offset] = tops[offset] + rect.height + gap
+      tops[offset] = tops[offset] + rect.height + (bottomGap ? bottomGap : gap)
     })
     vm.style.height = Math.max.apply(Math, tops) + 'px'
   }
